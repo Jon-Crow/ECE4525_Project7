@@ -130,10 +130,69 @@ var sketchProc = function(processingInstance)
 		noStroke();
 		
 	};
-	
-	var PathNode = function()
+	TileMap.prototype.getPathConnections = function(x, y)
 	{
+	};
+	
+	var PathNode = function(x, y, par)
+	{
+		this.x   = x;
+		this.y   = y;
+		this.par = par;
+		this.f   = -1;
+	};
+	PathNode.prototype.getX      = function() { return this.x;   };
+	PathNode.prototype.getY      = function() { return this.y;   };
+	PathNode.prototype.getParent = function() { return this.par; };
+	PathNode.prototype.getF = function(start, end) 
+	{
+		if(this.f === -1)
+		{
+			var g  = dist(x,y,start.getX(),start.getY());
+			var h  = dist(x,y,end.getX(),end.getY());
+			this.f = g+h;
+		}
+		return this.f;
+	};
+	PathNode.prototype.equals = function(node)
+	{
+		return this.x === node.getX() && this.y === node.getY();
+	};
+	
+	var getPath = function(x1, y1, x2, y2, map)
+	{
+		var start        = new PathNode(x1, y1, null);
+		var end          = new PathNode(x2, y2, null);
+		var nodes_open   = [start];
+		var nodes_closed = [];
 		
+		while(nodes_open.length > 0)
+		{
+			var minF    = nodes_open[0];
+			var minF_in = 0;
+			for(var i = 1; i < nodes_open.length; i++)
+			{
+				if(nodes_open[i].getF() < minF.getF())
+				{
+					minF    = nodes_open[i];
+					minF_in = i;
+				}
+			}
+			nodes_open.splice(i,1);
+			nodes_closed.push(minF);
+			if(minF.equals(end))
+			{
+				var path = [];
+				var step = minF;
+				while(step !== null)
+				{
+					path.push(step);
+					step = step.getParent();
+				}
+				return path.reverse();
+			}
+			
+		}
 	};
 	
 	var Player = function(x, y)
