@@ -103,13 +103,13 @@ var sketchProc = function(processingInstance)
 				if(this.imgs[y][x] === imgGround)
 				{
 					if(y > 0 && this.imgs[y-1][x] === imgGround)
-						vecCon.push(new PVector(x,y-1));
+						vecCon.push(new PVector(x*20+10,(y-1)*20+10));
 					if(y < this.imgs.length-1 && this.imgs[y+1][x] === imgGround)
-						vecCon.push(new PVector(x,y+1));
+						vecCon.push(new PVector(x*20+10,(y+1)*20+10));
 					if(x > 0 && this.imgs[y][x-1] === imgGround)
-						vecCon.push(new PVector(x-1,y));
+						vecCon.push(new PVector((x-1)*20+10,y*20+10));
 					if(x < this.imgs[y].length-1 && this.imgs[y][x+1] === imgGround)
-						vecCon.push(new PVector(x+1,y));
+						vecCon.push(new PVector((x+1)*20+10,y*20+10));
 				}
 				vecRow.push(vecCon);
 			}
@@ -121,14 +121,19 @@ var sketchProc = function(processingInstance)
 		for(var y = 0; y < this.imgs.length; y++)
 			for(var x = 0; x < this.imgs[y].length; x++)
 				image(imgs[this.imgs[y][x]],x*20,y*20);
-		/*
+		
 		stroke(0,0,0);
 		for(var y = 0; y < this.vecs.length; y++)
 			for(var x = 0; x < this.vecs[y].length; x++)
 				for(var z = 0; z < this.vecs[y][x].length; z++)
-					line(x*20+10,y*20+10,this.vecs[y][x][z].x*20+10,this.vecs[y][x][z].y*20+10);
+					line(x*20+10,y*20+10,this.vecs[y][x][z].x,this.vecs[y][x][z].y);
 		noStroke();
-		*/
+		
+	};
+	
+	var PathNode = function()
+	{
+		
 	};
 	
 	var Player = function(x, y)
