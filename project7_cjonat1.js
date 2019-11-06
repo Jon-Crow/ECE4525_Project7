@@ -79,26 +79,56 @@ var sketchProc = function(processingInstance)
 	var TileMap = function(tileMap)
 	{
 		this.imgs = [];
+		this.vecs = [];
 		for(var y = 0; y < tileMap.length; y++)
 		{
 			var row = [];
 			for(var x = 0; x < tileMap[y].length; x++)
 			{
 				if(tileMap[y][x] == "w")
-					row.push(imgs[imgWall]);
+					row.push(imgWall);
 				else if(tileMap[y][x] == " ")
-					row.push(imgs[imgGround]);
+					row.push(imgGround);
 				else
 					console.log("ERROR LOADING TILEMAP: Unknown tile: " + tileMap[y][x]);
 			}
 			this.imgs.push(row);
+		}
+		for(var y = 0; y < this.imgs.length; y++)
+		{
+			var vecRow = [];
+			for(var x = 0; x < this.imgs[y].length; x++)
+			{
+				var vecCon = [];
+				if(this.imgs[y][x] === imgGround)
+				{
+					if(y > 0 && this.imgs[y-1][x] === imgGround)
+						vecCon.push(new PVector(x,y-1));
+					if(y < this.imgs.length-1 && this.imgs[y+1][x] === imgGround)
+						vecCon.push(new PVector(x,y+1));
+					if(x > 0 && this.imgs[y][x-1] === imgGround)
+						vecCon.push(new PVector(x-1,y));
+					if(x < this.imgs[y].length-1 && this.imgs[y][x+1] === imgGround)
+						vecCon.push(new PVector(x+1,y));
+				}
+				vecRow.push(vecCon);
+			}
+			this.vecs.push(vecRow);
 		}
 	};
 	TileMap.prototype.display = function()
 	{
 		for(var y = 0; y < this.imgs.length; y++)
 			for(var x = 0; x < this.imgs[y].length; x++)
-				image(this.imgs[y][x],x*20,y*20);
+				image(imgs[this.imgs[y][x]],x*20,y*20);
+		/*
+		stroke(0,0,0);
+		for(var y = 0; y < this.vecs.length; y++)
+			for(var x = 0; x < this.vecs[y].length; x++)
+				for(var z = 0; z < this.vecs[y][x].length; z++)
+					line(x*20+10,y*20+10,this.vecs[y][x][z].x*20+10,this.vecs[y][x][z].y*20+10);
+		noStroke();
+		*/
 	};
 	
 	var Player = function(x, y)
