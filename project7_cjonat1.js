@@ -101,17 +101,32 @@ var sketchProc = function(processingInstance)
 				image(this.imgs[y][x],x*20,y*20);
 	};
 	
+	var Player = function(x, y)
+	{
+		this.pos = new PVector(x, y);
+	};
+	Player.prototype.display = function()
+	{
+		image(imgs[imgPlayer],this.pos.x-10,this.pos.y-10,20,20);
+	};
+	Player.prototype.update = function()
+	{};
+	
 	var MenuGameState = function()
 	{
 		this.tileMap = new TileMap(tileMap);
+		this.plyr    = new Player(30,30);
 	};
 	MenuGameState.prototype.display = function()
 	{
 		background(255,0,0);
 		this.tileMap.display();
+		this.plyr.display();
 	};
 	MenuGameState.prototype.update = function()
-	{};
+	{
+		this.plyr.update();
+	};
 	MenuGameState.prototype.getNextState = function()
 	{
 		return this;
