@@ -40,31 +40,36 @@ var sketchProc = function(processingInstance)
 	var imgs      = [];
 	var imgWall   = 0;
 	var imgGround = 1;
+	var imgPlayer = 2;
 	
 	var initImages = function()
-	{};
+	{
+		imgs[imgWall]   = loadImage("img/wall.png");
+		imgs[imgGround] = loadImage("img/ground.png");
+		imgs[imgPlayer] = loadImage("img/player.png");
+	};
 	
 	initImages();
 	
 	var tileMap = [
 	"wwwwwwwwwwwwwwwwwwww",
 	"w                  w",
+	"wwwwwwww     wwwwwww",
 	"w                  w",
+	"w  wwwwwwwwwwwwww  w",
 	"w                  w",
+	"w wwwww wwwww wwww w",
+	"w w              w w",
+	"w w              w w",
+	"w w   wwwwwwww   w w",
+	"w w   wwwwwwww   w w",
+	"w w              w w",
+	"w w              w w",
+	"w wwwwww     wwwww w",
 	"w                  w",
+	"w  wwwwwwwwwwwwww  w",
 	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
-	"w                  w",
+	"wwwwwww wwwww wwwwww",
 	"w                  w",
 	"wwwwwwwwwwwwwwwwwwww"
 	];
@@ -73,18 +78,20 @@ var sketchProc = function(processingInstance)
 	
 	var TileMap = function(tileMap)
 	{
-		this.imgs = [][];
+		this.imgs = [];
 		for(var y = 0; y < tileMap.length; y++)
 		{
+			var row = [];
 			for(var x = 0; x < tileMap[y].length; x++)
 			{
 				if(tileMap[y][x] == "w")
-					this.imgs[y][x] = (imgs[imgWall]);
+					row.push(imgs[imgWall]);
 				else if(tileMap[y][x] == " ")
-					this.imgs[y][x] = (imgs[imgGround]);
+					row.push(imgs[imgGround]);
 				else
 					console.log("ERROR LOADING TILEMAP: Unknown tile: " + tileMap[y][x]);
 			}
+			this.imgs.push(row);
 		}
 	};
 	TileMap.prototype.display = function()
@@ -95,10 +102,13 @@ var sketchProc = function(processingInstance)
 	};
 	
 	var MenuGameState = function()
-	{};
+	{
+		this.tileMap = new TileMap(tileMap);
+	};
 	MenuGameState.prototype.display = function()
 	{
 		background(255,0,0);
+		this.tileMap.display();
 	};
 	MenuGameState.prototype.update = function()
 	{};
