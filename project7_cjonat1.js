@@ -54,7 +54,7 @@ var sketchProc = function(processingInstance)
 	var tileMap = [
 	"wwwwwwwwwwwwwwwwwwww",
 	"w                  w",
-	"wwwwwwww     wwwwwww",
+	"w wwwwww     wwwww w",
 	"w                  w",
 	"w  wwwwwwwwwwwwww  w",
 	"w                  w",
@@ -69,7 +69,7 @@ var sketchProc = function(processingInstance)
 	"w                  w",
 	"w  wwwwwwwwwwwwww  w",
 	"w                  w",
-	"wwwwwww wwwww wwwwww",
+	"w wwwww wwwww wwww w",
 	"w                  w",
 	"wwwwwwwwwwwwwwwwwwww"
 	];
@@ -134,6 +134,30 @@ var sketchProc = function(processingInstance)
 	TileMap.prototype.getPathConnections = function(x, y)
 	{
 		return this.vecs[round((y-10)/20)][round((x-10)/20)];
+	};
+	TileMap.prototype.getNearestVector = function(trueX, trueY)
+	{
+		var curDist, minDist = 100000000000000000;
+		var curX, curY, minX = -1, minY = -1;
+		for(var y = 0; y < this.vecs.length; y++)
+		{
+			for(var x = 0; x < this.vecs[y].length; x++)
+			{
+				if(this.vecs[y][x].length > 0)
+				{
+					curX = x*20+10;
+					curY = y*20+10;
+					curDist = dist(trueX, trueY, curX, curY);
+					if(curDist < minDist)
+					{
+						minDist = curDist;
+						minX = curX;
+						minY = curY;
+					}
+				}
+			}
+		}
+		return new PVector(minX, minY);
 	};
 	
 	var PathNode = function(x, y, par)
@@ -220,12 +244,13 @@ var sketchProc = function(processingInstance)
 	
 	var Enemy = function(x, y, plyr, map)
 	{
-		this.pos  = new PVector(x, y);
-		this.vel  = new PVector(0,0);
-		this.plyr = plyr;
-		this.map  = map;
-		this.path = getPath(x, y, plyr.getX(), plyr.getY(), map);
-		this.targ = this.path[0];
+		this.pos   = new PVector(x, y);
+		this.vel   = new PVector(0,0);
+		this.plyr  = plyr;
+		this.map   = map;
+		this.path  = getPath(x, y, plyr.getX(), plyr.getY(), map);
+		this.targ  = this.path[0];
+		this.speed = 1.5;
 	};
 	Enemy.prototype.display = function()
 	{
@@ -243,32 +268,45 @@ var sketchProc = function(processingInstance)
 	};
 	Enemy.prototype.update = function()
 	{
-		this.vel.set(0,0);
-		if(this.targ.getX() < this.pos.x)
-			this.vel.x = -1;
-		else if(this.targ.getX() > this.pos.x)
-			this.vel.x = 1;
-		if(this.targ.getY() < this.pos.y)
-			this.vel.y = -1;
-		else if(this.targ.getY() > this.pos.y)
-			this.vel.y = 1;
-		this.vel.normalize();
-		this.pos.add(this.vel);
-		if(dist(this.pos.x, this.pos.y, this.targ.getX(), this.targ.getY()) <= 0.5)
+		if(dist(this.pos.x, this.pos.y, this.targ.getX(), this.targ.getY()) > this.speed)
 		{
+			this.vel.set(0,0);
+			if(this.targ.getX() < this.pos.x)
+				this.vel.x = -1;
+			else if(this.targ.getX() > this.pos.x)
+				this.vel.x = 1;
+			if(this.targ.getY() < this.pos.y)
+				this.vel.y = -1;
+			else if(this.targ.getY() > this.pos.y)
+				this.vel.y = 1;
+			this.vel.normalize();
+			this.vel.mult(this.speed);
+			this.pos.add(this.vel);
+		}
+		else
+		{
+			this.pos.set(this.targ.getX(), this.targ.getY());
 			this.path.splice(0,1);
 			if(this.path.length === 0)
-				this.path = getPath(this.pos.x, this.pos.y, this.plyr.getX(), this.plyr.getY(), this.map);
+				this.updatePath();
+			else if(dist(this.path[this.path.length-1].getX(),this.path[this.path.length-1].getY(),this.plyr.getX(),this.plyr.getY()) > 40)
+				this.updatePath();
 			this.targ = this.path[0];
 		}
-		if(dist(this.path[this.path.length-1].getX(),this.path[this.path.length-1].getY(),this.plyr.getX(),this.plyr.getY()) > 20)
-			this.path = getPath(this.pos.x, this.pos.y, this.plyr.getX(), this.plyr.getY(), this.map);
+	};
+	Enemy.prototype.updatePath = function()
+	{
+		var near = this.map.getNearestVector(this.plyr.getX(), this.plyr.getY());
+		this.path = getPath(this.pos.x, this.pos.y, near.x, near.y, this.map);
 	};
 	
-	var Player = function(x, y)
+	var Player = function(x, y, map)
 	{
-		this.pos = new PVector(x, y);
-		this.vel = new PVector(0, 0);
+		this.pos   = new PVector(x, y);
+		this.vel   = new PVector(0, 0);
+		this.targ  = new PVector(x, y);
+		this.speed = 1.5;
+		this.map   = map;
 	};
 	Player.prototype.getX = function() { return this.pos.x; };
 	Player.prototype.getY = function() { return this.pos.y; };
@@ -278,24 +316,46 @@ var sketchProc = function(processingInstance)
 	};
 	Player.prototype.update = function()
 	{
-		this.vel.set(0,0);
-		if(keyArray[UP])
-			this.vel.y -= 1;
-		if(keyArray[DOWN])
-			this.vel.y += 1;
-		if(keyArray[RIGHT])
-			this.vel.x += 1;
-		if(keyArray[LEFT])
-			this.vel.x -= 1;
-		this.vel.normalize();
-		this.vel.mult(1.5);
+		if(dist(this.pos.x, this.pos.y, this.targ.x, this.targ.y) <= this.speed)
+		{
+			this.pos.set(this.targ);
+			this.vel.set(0,0);
+			var cons = this.map.getPathConnections(this.pos.x, this.pos.y);
+			for(var i = 0; i < cons.length; i++)
+			{
+				if(cons[i].x < this.pos.x && keyArray[LEFT])
+				{
+					this.vel.x = -this.speed;
+					this.targ  = cons[i];
+					return;
+				}
+				else if(cons[i].x > this.pos.x && keyArray[RIGHT])
+				{
+					this.vel.x = this.speed;
+					this.targ  = cons[i];
+					return;
+				}
+				else if(cons[i].y < this.pos.y && keyArray[UP])
+				{
+					this.vel.y = -this.speed;
+					this.targ  = cons[i];
+					return;
+				}
+				else if(cons[i].y > this.pos.y && keyArray[DOWN])
+				{
+					this.vel.y = this.speed;
+					this.targ  = cons[i];
+					return;
+				}
+			}
+		}
 		this.pos.add(this.vel);
 	};
 	
 	var MenuGameState = function()
 	{
 		this.tileMap = new TileMap(tileMap);
-		this.plyr    = new Player(30,30);
+		this.plyr    = new Player(30,30,this.tileMap);
 		this.ens     = [new Enemy(370,370,this.plyr,this.tileMap)];
 	};
 	MenuGameState.prototype.display = function()
