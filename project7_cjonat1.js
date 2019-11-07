@@ -231,31 +231,44 @@ var sketchProc = function(processingInstance)
 	{
 		fill(0,255,0);
 		ellipse(this.pos.x, this.pos.y, 20, 20);
+		/*
+		stroke(0,0,255);
+		strokeWeight(5);
+		for(var i = 1; i < this.path.length; i++)
+			line(this.path[i-1].getX(),this.path[i-1].getY(),this.path[i].getX(),this.path[i].getY());
+		noStroke();
+		fill(255,255,255);
+		ellipse(this.targ.getX(), this.targ.getY(), 15, 15);
+		*/
 	};
 	Enemy.prototype.update = function()
 	{
 		this.vel.set(0,0);
 		if(this.targ.getX() < this.pos.x)
 			this.vel.x = -1;
-		else if(this.targ.getX() < this.pos.x)
+		else if(this.targ.getX() > this.pos.x)
 			this.vel.x = 1;
 		if(this.targ.getY() < this.pos.y)
 			this.vel.y = -1;
-		else if(this.targ.getY() < this.pos.y)
+		else if(this.targ.getY() > this.pos.y)
 			this.vel.y = 1;
 		this.vel.normalize();
 		this.pos.add(this.vel);
 		if(dist(this.pos.x, this.pos.y, this.targ.getX(), this.targ.getY()) <= 0.5)
 		{
 			this.path.splice(0,1);
-			if(this.path.length > 0)
-				this.targ = this.path[0];
+			if(this.path.length === 0)
+				this.path = getPath(this.pos.x, this.pos.y, this.plyr.getX(), this.plyr.getY(), this.map);
+			this.targ = this.path[0];
 		}
+		if(dist(this.path[this.path.length-1].getX(),this.path[this.path.length-1].getY(),this.plyr.getX(),this.plyr.getY()) > 20)
+			this.path = getPath(this.pos.x, this.pos.y, this.plyr.getX(), this.plyr.getY(), this.map);
 	};
 	
 	var Player = function(x, y)
 	{
 		this.pos = new PVector(x, y);
+		this.vel = new PVector(0, 0);
 	};
 	Player.prototype.getX = function() { return this.pos.x; };
 	Player.prototype.getY = function() { return this.pos.y; };
@@ -264,13 +277,26 @@ var sketchProc = function(processingInstance)
 		image(imgs[imgPlayer],this.pos.x-10,this.pos.y-10,20,20);
 	};
 	Player.prototype.update = function()
-	{};
+	{
+		this.vel.set(0,0);
+		if(keyArray[UP])
+			this.vel.y -= 1;
+		if(keyArray[DOWN])
+			this.vel.y += 1;
+		if(keyArray[RIGHT])
+			this.vel.x += 1;
+		if(keyArray[LEFT])
+			this.vel.x -= 1;
+		this.vel.normalize();
+		this.vel.mult(1.5);
+		this.pos.add(this.vel);
+	};
 	
 	var MenuGameState = function()
 	{
 		this.tileMap = new TileMap(tileMap);
 		this.plyr    = new Player(30,30);
-		this.path    = getPath(20,20,370,370,this.tileMap);
+		this.ens     = [new Enemy(370,370,this.plyr,this.tileMap)];
 	};
 	MenuGameState.prototype.display = function()
 	{
@@ -278,14 +304,14 @@ var sketchProc = function(processingInstance)
 		background(255,0,0);
 		this.tileMap.display();
 		this.plyr.display();
-		stroke(0,0,255);
-		strokeWeight(3);
-		for(var i = 1; i < this.path.length; i++)
-			line(this.path[i-1].getX(),this.path[i-1].getY(),this.path[i].getX(),this.path[i].getY());
+		for(var i = 0; i < this.ens.length; i++)
+			this.ens[i].display();
 	};
 	MenuGameState.prototype.update = function()
 	{
 		this.plyr.update();
+		for(var i = 0; i < this.ens.length; i++)
+			this.ens[i].update();
 	};
 	MenuGameState.prototype.getNextState = function()
 	{
