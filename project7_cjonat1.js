@@ -123,6 +123,7 @@ var sketchProc = function(processingInstance)
 				image(imgs[this.imgs[y][x]],x*20,y*20);
 		
 		stroke(0,0,0);
+		strokeWeight(1);
 		for(var y = 0; y < this.vecs.length; y++)
 			for(var x = 0; x < this.vecs[y].length; x++)
 				for(var z = 0; z < this.vecs[y][x].length; z++)
@@ -132,6 +133,7 @@ var sketchProc = function(processingInstance)
 	};
 	TileMap.prototype.getPathConnections = function(x, y)
 	{
+		return this.vecs[round((y-10)/20)][round((x-10)/20)];
 	};
 	
 	var PathNode = function(x, y, par)
@@ -148,8 +150,8 @@ var sketchProc = function(processingInstance)
 	{
 		if(this.f === -1)
 		{
-			var g  = dist(x,y,start.getX(),start.getY());
-			var h  = dist(x,y,end.getX(),end.getY());
+			var g  = dist(this.x,this.y,start.getX(),start.getY());
+			var h  = dist(this.x,this.y,end.getX(),end.getY());
 			this.f = g+h;
 		}
 		return this.f;
@@ -163,23 +165,23 @@ var sketchProc = function(processingInstance)
 	{
 		var start        = new PathNode(x1, y1, null);
 		var end          = new PathNode(x2, y2, null);
-		var nodes_open   = [start];
-		var nodes_closed = [];
+		var openNodes   = [start];
+		var closedNodes = [];
 		
-		while(nodes_open.length > 0)
+		while(openNodes.length > 0)
 		{
-			var minF    = nodes_open[0];
+			var minF    = openNodes[0];
 			var minF_in = 0;
-			for(var i = 1; i < nodes_open.length; i++)
+			for(var i = 1; i < openNodes.length; i++)
 			{
-				if(nodes_open[i].getF() < minF.getF())
+				if(openNodes[i].getF(start,end) < minF.getF(start,end))
 				{
-					minF    = nodes_open[i];
+					minF    = openNodes[i];
 					minF_in = i;
 				}
 			}
-			nodes_open.splice(i,1);
-			nodes_closed.push(minF);
+			openNodes.splice(minF_in,1);
+			closedNodes.push(minF);
 			if(minF.equals(end))
 			{
 				var path = [];
@@ -191,7 +193,63 @@ var sketchProc = function(processingInstance)
 				}
 				return path.reverse();
 			}
-			
+			var cons = map.getPathConnections(minF.getX(),minF.getY());
+			for(var i = 0; i < cons.length; i++)
+			{
+				var conNode = new PathNode(cons[i].x, cons[i].y, minF);
+				var isClosed = false;
+				for(var c = 0; c < closedNodes.length; c++)
+				{
+					if(conNode.equals(closedNodes[c]))
+						isClosed = true;
+				}
+				if(!isClosed)
+				{
+					var isOpen = false;
+					for(var c = 0; c < openNodes.length; c++)
+					{
+						if(conNode.equals(openNodes[c]))
+							isOpen = true;
+					}
+					if(!isOpen)
+						openNodes.push(conNode);
+				}
+			}
+		}
+	};
+	
+	var Enemy = function(x, y, plyr, map)
+	{
+		this.pos  = new PVector(x, y);
+		this.vel  = new PVector(0,0);
+		this.plyr = plyr;
+		this.map  = map;
+		this.path = getPath(x, y, plyr.getX(), plyr.getY(), map);
+		this.targ = this.path[0];
+	};
+	Enemy.prototype.display = function()
+	{
+		fill(0,255,0);
+		ellipse(this.pos.x, this.pos.y, 20, 20);
+	};
+	Enemy.prototype.update = function()
+	{
+		this.vel.set(0,0);
+		if(this.targ.getX() < this.pos.x)
+			this.vel.x = -1;
+		else if(this.targ.getX() < this.pos.x)
+			this.vel.x = 1;
+		if(this.targ.getY() < this.pos.y)
+			this.vel.y = -1;
+		else if(this.targ.getY() < this.pos.y)
+			this.vel.y = 1;
+		this.vel.normalize();
+		this.pos.add(this.vel);
+		if(dist(this.pos.x, this.pos.y, this.targ.getX(), this.targ.getY()) <= 0.5)
+		{
+			this.path.splice(0,1);
+			if(this.path.length > 0)
+				this.targ = this.path[0];
 		}
 	};
 	
@@ -199,6 +257,8 @@ var sketchProc = function(processingInstance)
 	{
 		this.pos = new PVector(x, y);
 	};
+	Player.prototype.getX = function() { return this.pos.x; };
+	Player.prototype.getY = function() { return this.pos.y; };
 	Player.prototype.display = function()
 	{
 		image(imgs[imgPlayer],this.pos.x-10,this.pos.y-10,20,20);
@@ -210,12 +270,18 @@ var sketchProc = function(processingInstance)
 	{
 		this.tileMap = new TileMap(tileMap);
 		this.plyr    = new Player(30,30);
+		this.path    = getPath(20,20,370,370,this.tileMap);
 	};
 	MenuGameState.prototype.display = function()
 	{
+		noStroke();
 		background(255,0,0);
 		this.tileMap.display();
 		this.plyr.display();
+		stroke(0,0,255);
+		strokeWeight(3);
+		for(var i = 1; i < this.path.length; i++)
+			line(this.path[i-1].getX(),this.path[i-1].getY(),this.path[i].getX(),this.path[i].getY());
 	};
 	MenuGameState.prototype.update = function()
 	{
